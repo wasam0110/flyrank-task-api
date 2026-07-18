@@ -56,7 +56,8 @@ content-length: 40
 
 ## Swagger UI
 
-![Swagger UI](swagger-screenshot.png)
+<img width="1403" height="861" alt="image" src="https://github.com/user-attachments/assets/4de5e225-bb61-4e1e-badf-ba2ec27c7d68" />
+
 
 ---
 
