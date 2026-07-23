@@ -64,3 +64,39 @@ content-length: 40
 ## The mortality experiment
 
 After creating a few tasks and restarting the server, all tasks reset to the original 3 seed tasks — everything added at runtime was gone. This happens because the data lives only in the program's memory (a Python list), which is wiped every time the process stops. This is the entire reason databases exist, and exactly what Week 3 introduces.
+
+
+# Flyrank Task API — Week 3
+
+A CRUD task API built with FastAPI and SQLite.
+
+## Why SQLite?
+SQLite stores the entire database in a single file (tasks.db).
+No separate server to install or run. Data survives restarts
+because it lives on disk, not in memory. Perfect for small
+projects and internship assignments.
+
+## Where the database lives
+`tasks.db` is created automatically on first run.
+It is git-ignored so each clone starts fresh with 3 seeded tasks.
+
+## How to run
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+## Endpoints
+- GET /tasks — list all tasks
+- GET /tasks/{id} — get one task
+- POST /tasks — create a task
+- PUT /tasks/{id} — update a task
+- DELETE /tasks/{id} — delete a task
+
+## Example SQL query (Stage 4)
+SELECT * FROM tasks WHERE done = 1;
+-- Returns all completed tasks from the database directly
+
+## Why identical tests passing proves storage is an implementation detail
+The API endpoints, request shapes, and response shapes are
+identical to Assignment 1. The only thing that changed is where
+data is stored. Clients cannot tell the difference — which proves
+the API is the contract and storage is just an internal detail.
