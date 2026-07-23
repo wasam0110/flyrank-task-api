@@ -95,8 +95,24 @@ uvicorn main:app --reload
 SELECT * FROM tasks WHERE done = 1;
 -- Returns all completed tasks from the database directly
 
+## DB Browser screenshot
+![tasks.db open in DB Browser](db-screenshot.png)
+
 ## Why identical tests passing proves storage is an implementation detail
 The API endpoints, request shapes, and response shapes are
 identical to Assignment 1. The only thing that changed is where
 data is stored. Clients cannot tell the difference — which proves
 the API is the contract and storage is just an internal detail.
+
+## Proof that storage is just an implementation detail
+The endpoints, request shapes, and response shapes are identical
+to Assignment 1. The client cannot tell whether data comes from
+memory or SQLite. Identical tests passing = proof the API contract
+never changed.
+
+## Stage 4 SQL query example
+SELECT * FROM tasks WHERE done = 1;
+-- Returns only completed tasks directly from the database.
+-- After running UPDATE tasks SET done = 1 in DB Browser,
+-- calling GET /tasks from the API reflected the change instantly
+-- with no server restart needed.
