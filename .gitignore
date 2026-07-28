@@ -1,0 +1,13 @@
+# secrets — NEVER commit
+.env
+
+# SQLite leftover from A2
+tasks.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
