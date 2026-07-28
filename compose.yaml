@@ -1,0 +1,31 @@
+services:
+
+  # ── FastAPI app ──────────────────────────────────────────────────────────
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Inside the compose network, the db is reachable by service name "db" — not localhost
+      DATABASE_URL: postgresql://postgres:dev@db:5432/tasks
+    depends_on:
+      db:
+        condition: service_healthy   # wait until pg_isready passes before starting
+
+  # ── Postgres ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: tasks
+    volumes:
+      - taskdata:/var/lib/postgresql/data   # data survives docker compose down
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# ── named volume (persists between restarts) ──────────────────────────────
+volumes:
+  taskdata:
