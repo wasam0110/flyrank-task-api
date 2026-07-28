@@ -1,118 +1,291 @@
-# flyrank-task-api
+# FlyRank Task API
 
-A simple in-memory CRUD API for managing tasks, built with Python and FastAPI.
-Built as Week 2 Assignment A1 of the FlyRank Backend Internship Track.
+A CRUD Task API built with **FastAPI**, **PostgreSQL**, and **Docker Compose**.
+
+The application demonstrates the progression of storage across assignments while keeping the API layer unchanged.
+
+| Assignment | Storage | Technology |
+|------------|---------|------------|
+| A1 | In-memory Python list | Python |
+| A2 | SQLite database | SQLite |
+| **A3** | PostgreSQL | Docker + PostgreSQL |
 
 ---
 
-## How to run
+# Features
+
+- FastAPI REST API
+- PostgreSQL database
+- psycopg3 database driver
+- Parameterized SQL queries
+- Dockerized application
+- Docker Compose orchestration
+- Automatic database initialization
+- Persistent database storage using Docker volumes
+- Interactive Swagger documentation
+
+---
+
+# Project Structure
+
+```
+.
+├── main.py
+├── db.py
+├── Dockerfile
+├── compose.yaml
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+---
+
+# Running the project
+
+## Using Docker Compose (Recommended)
+
+```bash
+docker compose up --build
+```
+
+The API becomes available at
+
+```
+http://localhost:8000
+```
+
+Swagger documentation
+
+```
+http://localhost:8000/docs
+```
+
+Stop the application
+
+```bash
+docker compose down
+```
+
+Database data is preserved using a named Docker volume.
+
+---
+
+# Running locally
+
+Create the environment file
+
+```bash
+cp .env.example .env
+```
+
+Example
+
+```text
+DATABASE_URL=postgresql://postgres:dev@localhost:5432/tasks
+```
+
+> If port **5432** is already occupied by another PostgreSQL installation, use another host port (for example **5433**) and update the connection string accordingly.
+
+Install dependencies
 
 ```bash
 pip install -r requirements.txt
-python -m uvicorn main:app --reload
 ```
 
-Server starts at `http://localhost:8000`  
-Swagger UI is available at `http://localhost:8000/docs`
+Initialize the database
 
----
-
-## Endpoints
-
-| Method | Path | Description | Success Code |
-|--------|------|-------------|--------------|
-| GET | `/` | API info | 200 |
-| GET | `/health` | Health check | 200 |
-| GET | `/tasks` | List all tasks | 200 |
-| GET | `/tasks/{id}` | Get one task by ID | 200 |
-| POST | `/tasks` | Create a new task | 201 |
-| PUT | `/tasks/{id}` | Update title and/or done | 200 |
-| DELETE | `/tasks/{id}` | Delete a task | 204 |
-
-### Error codes
-
-| Code | Meaning |
-|------|---------|
-| 400 | Missing or empty `title`, or empty request body |
-| 404 | Task ID does not exist |
-
----
-
-## Example curl output
-
-```
-curl -i -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Buy milk"}'
-
-HTTP/1.1 201 Created
-content-type: application/json
-content-length: 40
-
-{"id":4,"title":"Buy milk","done":false}
+```bash
+python -c "import db; db.init_db(); print('Database initialized successfully')"
 ```
 
----
+Run the API
 
-## Swagger UI
-
-<img width="1403" height="861" alt="image" src="https://github.com/user-attachments/assets/4de5e225-bb61-4e1e-badf-ba2ec27c7d68" />
-
-
----
-
-## The mortality experiment
-
-After creating a few tasks and restarting the server, all tasks reset to the original 3 seed tasks — everything added at runtime was gone. This happens because the data lives only in the program's memory (a Python list), which is wiped every time the process stops. This is the entire reason databases exist, and exactly what Week 3 introduces.
-
-
-# Flyrank Task API — Week 3
-
-A CRUD task API built with FastAPI and SQLite.
-
-## Why SQLite?
-SQLite stores the entire database in a single file (tasks.db).
-No separate server to install or run. Data survives restarts
-because it lives on disk, not in memory. Perfect for small
-projects and internship assignments.
-
-## Where the database lives
-`tasks.db` is created automatically on first run.
-It is git-ignored so each clone starts fresh with 3 seeded tasks.
-
-## How to run
-pip install -r requirements.txt
+```bash
 uvicorn main:app --reload
+```
 
-## Endpoints
-- GET /tasks — list all tasks
-- GET /tasks/{id} — get one task
-- POST /tasks — create a task
-- PUT /tasks/{id} — update a task
-- DELETE /tasks/{id} — delete a task
+---
 
-## Example SQL query (Stage 4)
-SELECT * FROM tasks WHERE done = 1;
--- Returns all completed tasks from the database directly
+# Environment Variables
 
-## DB Browser screenshot
-![tasks.db open in DB Browser](db-screenshot.png)
+| Variable | Description |
+|----------|-------------|
+| DATABASE_URL | PostgreSQL connection string |
 
-## Why identical tests passing proves storage is an implementation detail
-The API endpoints, request shapes, and response shapes are
-identical to Assignment 1. The only thing that changed is where
-data is stored. Clients cannot tell the difference — which proves
-the API is the contract and storage is just an internal detail.
+Example
 
-## Proof that storage is just an implementation detail
-The endpoints, request shapes, and response shapes are identical
-to Assignment 1. The client cannot tell whether data comes from
-memory or SQLite. Identical tests passing = proof the API contract
-never changed.
+```
+DATABASE_URL=postgresql://postgres:dev@localhost:5432/tasks
+```
 
-## Stage 4 SQL query example
-SELECT * FROM tasks WHERE done = 1;
--- Returns only completed tasks directly from the database.
--- After running UPDATE tasks SET done = 1 in DB Browser,
--- calling GET /tasks from the API reflected the change instantly
--- with no server restart needed.
+Never commit your `.env` file.
+
+---
+
+# API Endpoints
+
+| Method | Endpoint | Description | Success |
+|--------|----------|-------------|---------|
+| GET | /tasks | Retrieve all tasks | 200 |
+| GET | /tasks/{id} | Retrieve a task | 200 |
+| POST | /tasks | Create task | 201 |
+| PUT | /tasks/{id} | Update task | 200 |
+| DELETE | /tasks/{id} | Delete task | 204 |
+| GET | /health | Health check | 200 |
+
+Possible error codes
+
+- 400 Bad Request
+- 404 Not Found
+
+---
+
+# Example curl Commands
+
+Retrieve all tasks
+
+```bash
+curl -i http://localhost:8000/tasks
+```
+
+Create
+
+```bash
+curl -i -X POST http://localhost:8000/tasks \
+-H "Content-Type: application/json" \
+-d '{"title":"Ship A3","done":false}'
+```
+
+Update
+
+```bash
+curl -i -X PUT http://localhost:8000/tasks/4 \
+-H "Content-Type: application/json" \
+-d '{"title":"Ship A3","done":true}'
+```
+
+Delete
+
+```bash
+curl -i -X DELETE http://localhost:8000/tasks/4
+```
+
+---
+
+# Database Verification
+
+Run
+
+```sql
+\dt
+```
+
+Expected
+
+```
+List of relations
+
+public | tasks | table | postgres
+```
+
+Run
+
+```sql
+SELECT * FROM tasks;
+```
+
+Replace this section with screenshots from your own PostgreSQL database before submission.
+
+---
+
+# Docker Persistence Test
+
+1. Start the application
+
+```
+docker compose up
+```
+
+2. Create a new task.
+
+3. Stop the application.
+
+```
+docker compose down
+```
+
+4. Start again.
+
+```
+docker compose up
+```
+
+5. Verify that the task still exists.
+
+This demonstrates persistent storage using Docker volumes.
+
+---
+
+# Why the Architecture Works
+
+The API layer never communicates with PostgreSQL directly.
+
+All database operations are isolated inside **db.py**.
+
+Changing the storage engine only requires updating the repository layer, while every API endpoint remains unchanged.
+
+This follows the layered architecture introduced in the course.
+
+---
+
+# Stage 6 – AI vs Me
+
+## Prompt Given to AI
+
+> Write all the files needed to containerize a FastAPI task CRUD API onto PostgreSQL. The app uses FastAPI with uvicorn and psycopg (psycopg3) as the database driver. Keep the existing Pydantic TaskIn model with title (str) and done (bool). Create the tasks table automatically if it doesn't exist and seed exactly three rows on first run only. All SQL must use parameterized queries. Store credentials in a .env file. Use Docker Compose with PostgreSQL and persistent Docker volumes.
+
+## Three Differences
+
+| # | AI Output | My Implementation |
+|---|-----------|-------------------|
+| 1 | Started the API immediately after the database container | Waited until PostgreSQL became healthy using `depends_on` with `condition: service_healthy` |
+| 2 | Did not fully explain Docker volume persistence | Configured and verified persistent Docker volumes across restarts |
+| 3 | Generated generic project documentation | Added assignment-specific documentation, curl examples, setup instructions, and verification steps |
+
+## What My Prompt Missed
+
+The original prompt did not explicitly require health checks, detailed documentation, or database verification screenshots.
+
+## Rematch Result
+
+After improving the prompt with health-check and documentation requirements, the AI generated a deployment configuration that required only minor manual adjustments.
+
+---
+
+# Assignment Progression
+
+## Week 3 (A3)
+
+PostgreSQL running inside Docker with persistent storage and Docker Compose.
+
+## Week 2 (A2)
+
+SQLite database stored locally in `tasks.db`.
+
+## Week 1 (A1)
+
+Tasks stored only in memory and lost when the application stopped.
+
+---
+
+# Technologies Used
+
+- Python
+- FastAPI
+- PostgreSQL
+- psycopg3
+- Docker
+- Docker Compose
+- Uvicorn
