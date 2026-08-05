@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlyRank Auth Tester</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 560px; margin: 0 auto; }
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+    header p { font-size: 13px; color: #888; margin-top: 4px; }
+    .server-bar { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; margin-bottom: 1.5rem; }
+    .server-bar label { font-size: 12px; font-weight: 500; color: #888; white-space: nowrap; }
+    .server-bar input { flex: 1; border: none; outline: none; font-size: 13px; font-family: monospace; background: transparent; color: #1a1a1a; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .dot.green { background: #22c55e; } .dot.red { background: #ef4444; }
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-title { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; }
+    .field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .field label { font-size: 13px; color: #555; width: 70px; flex-shrink: 0; }
+    .field input { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font-size: 13px; outline: none; transition: border-color 0.15s; background: #fafafa; }
+    .field input:focus { border-color: #6366f1; background: #fff; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    button { border: 1px solid #d0d0d0; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; background: #fff; color: #1a1a1a; transition: background 0.1s, border-color 0.1s; }
+    button:hover { background: #f5f5f5; border-color: #bbb; }
+    button:active { transform: scale(0.98); }
+    button.primary { background: #6366f1; border-color: #6366f1; color: #fff; }
+    button.primary:hover { background: #4f52e0; }
+    button.danger { background: #fff; border-color: #fca5a5; color: #ef4444; }
+    button.danger:hover { background: #fef2f2; }
+    .response { margin-top: 12px; border-radius: 6px; padding: 10px 12px; font-size: 12px; font-family: monospace; line-height: 1.6; word-break: break-all; white-space: pre-wrap; min-height: 36px; border: 1px solid transparent; color: #555; background: #f9f9f9; }
+    .response.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .response.err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .response.info { background: #f0f9ff; border-color: #bae6fd; color: #0c4a6e; }
+    .token-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+    .token-label { font-size: 12px; color: #888; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #e5e7eb; color: #6b7280; }
+    .badge.active { background: #dcfce7; color: #166534; }
+    .badge.dead { background: #fee2e2; color: #991b1b; }
+    .copy-btn { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ddd; background: #fff; color: #888; cursor: pointer; }
+    .copy-btn:hover { background: #f5f5f5; color: #333; }
+    .token-preview { margin-top: 8px; font-size: 11px; font-family: monospace; color: #aaa; word-break: break-all; background: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 6px 10px; line-height: 1.5; }
+    .route-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .method { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
+    .get { background: #dbeafe; color: #1d4ed8; }
+    .post { background: #dcfce7; color: #166534; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>FlyRank Auth Tester</h1>
+    <p>A4 — test signup, login, protected routes, and logout</p>
+  </header>
+  <div class="server-bar">
+    <label>SERVER</label>
+    <input type="text" id="base" value="http://localhost:8000" />
+    <div class="dot" id="server-dot"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stage 1 — Sign up</div>
+    <div class="field"><label>Email</label><input type="email" id="su-email" value="wasam.flyrank@gmail.com" /></div>
+    <div class="field"><label>Password</label><input type="password" id="su-pass" value="password123" /></div>
+    <div class="btn-row"><button class="primary" onclick="doSignup()"><span class="method post">POST</span>/auth/signup</button></div>
+    <div class="response" id="su-res">Press the button to test</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stage 1 — Log in</div>
+    <div class="field"><label>Email</label><input type="email" id="li-email" value="wasam.flyrank@gmail.com" /></div>
+    <div class="field"><label>Password</label><input type="password" id="li-pass" value="password123" /></div>
+    <div class="btn-row"><button class="primary" onclick="doLogin()"><span class="method post">POST</span>/auth/login</button></div>
+    <div class="response" id="li-res">Press the button to test</div>
+    <div class="token-row">
+      <span class="token-label">Token:</span>
+      <span class="badge" id="token-badge">none</span>
+      <button class="copy-btn" onclick="copyToken()">copy</button>
+    </div>
+    <div class="token-preview" id="token-preview">—</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stages 2–4 — Routes</div>
+    <div class="route-btns">
+      <button onclick="doPublic()"><span class="method get">GET</span>/public/info</button>
+      <button onclick="doProfile()"><span class="method get">GET</span>/protected/profile</button>
+      <button onclick="doDashboard()"><span class="method get">GET</span>/protected/dashboard</button>
+    </div>
+    <div class="response" id="pr-res">Pick a route to test</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stage 4 — Log out</div>
+    <div class="btn-row"><button class="danger" onclick="doLogout()"><span class="method post">POST</span>/auth/logout</button></div>
+    <div class="response" id="lo-res">Press the button to test</div>
+  </div>
+</div>
+<script>
+  let token = '';
+  function base() { return document.getElementById('base').value.replace(/\/$/, ''); }
+  function show(id, msg, type) { const el = document.getElementById(id); el.textContent = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2); el.className = 'response ' + (type || ''); }
+  function setDot(color) { document.getElementById('server-dot').className = 'dot ' + (color || ''); }
+  function setToken(t) {
+    token = t || '';
+    const badge = document.getElementById('token-badge');
+    const preview = document.getElementById('token-preview');
+    if (token) { badge.textContent = 'active'; badge.className = 'badge active'; preview.textContent = token.slice(0, 60) + '…'; }
+    else { badge.textContent = 'none'; badge.className = 'badge dead'; preview.textContent = '—'; }
+  }
+  async function req(method, path, body, useToken) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (useToken && token) headers['Authorization'] = 'Bearer ' + token;
+    try {
+      const r = await fetch(base() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      setDot('green');
+      let data; try { data = await r.json(); } catch { data = { raw: await r.text() }; }
+      return { ok: r.ok, status: r.status, data };
+    } catch (e) { setDot('red'); return { ok: false, status: 0, data: { error: 'Cannot reach server — is uvicorn running?' } }; }
+  }
+  async function doSignup() { show('su-res','Sending…','info'); const r=await req('POST','/auth/signup',{email:document.getElementById('su-email').value,password:document.getElementById('su-pass').value}); show('su-res',r.status+' '+JSON.stringify(r.data,null,2),r.ok?'ok':'err'); }
+  async function doLogin() { show('li-res','Sending…','info'); const r=await req('POST','/auth/login',{email:document.getElementById('li-email').value,password:document.getElementById('li-pass').value}); if(r.ok&&r.data.access_token){setToken(r.data.access_token);show('li-res',r.status+' Login successful — token stored','ok');}else{setToken('');show('li-res',r.status+' '+JSON.stringify(r.data,null,2),'err');} }
+  async function doPublic() { const r=await req('GET','/public/info',null,false); show('pr-res',r.status+' '+JSON.stringify(r.data,null,2),r.ok?'ok':'err'); }
+  async function doProfile() { const r=await req('GET','/protected/profile',null,true); show('pr-res',r.status+' '+JSON.stringify(r.data,null,2),r.ok?'ok':'err'); }
+  async function doDashboard() { const r=await req('GET','/protected/dashboard',null,true); show('pr-res',r.status+' '+JSON.stringify(r.data,null,2),r.ok?'ok':'err'); }
+  async function doLogout() { show('lo-res','Sending…','info'); const r=await req('POST','/auth/logout',null,true); if(r.ok){setToken('');show('lo-res','204 Logged out — token cleared','ok');}else{show('lo-res',r.status+' '+JSON.stringify(r.data,null,2),'err');} }
+  function copyToken() { if(!token)return; navigator.clipboard.writeText(token); const btn=document.querySelector('.copy-btn'); btn.textContent='copied!'; setTimeout(()=>{btn.textContent='copy';},1500); }
+</script>
+</body>
+</html>
