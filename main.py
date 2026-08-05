@@ -1,18 +1,26 @@
-"""
-main.py — FastAPI routes only.
-No SQL here. Every storage call goes through db.py.
-Compare with your A2 main.py — the routes are almost identical.
-Only `import sqlite3` and the inline SQL are gone.
-"""
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+from supabase import create_client
+from dotenv import load_dotenv
+import os
 import db
 
-app = FastAPI(title="FlyRank Task API", version="A3 — Containerized Postgres")
+load_dotenv()
 
+app = FastAPI(title="FlyRank Task API", version="A4 — Auth")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+security = HTTPBearer()
 # ── startup ──────────────────────────────────────────────────────────────────
 
 @app.on_event("startup")
@@ -81,3 +89,69 @@ def health():
 @app.get("/")
 def root():
     return {"message": "FlyRank Task API — A3", "docs": "/docs"}
+
+# ── auth models ────────────────────────────────────────────────────────────────
+
+class AuthCredentials(BaseModel):
+    email: str
+    password: str
+
+
+# ── auth guard (reusable middleware) ───────────────────────────────────────────
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        result = supabase.auth.get_user(token)
+        return result.user
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+# ── auth routes ────────────────────────────────────────────────────────────────
+
+@app.post("/auth/signup", status_code=201)
+def signup(creds: AuthCredentials):
+    if not creds.email or not creds.password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+    try:
+        result = supabase.auth.sign_up({"email": creds.email, "password": creds.password})
+        return {"user": result.user}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/auth/login")
+def login(creds: AuthCredentials):
+    if not creds.email or not creds.password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+    try:
+        result = supabase.auth.sign_in_with_password({"email": creds.email, "password": creds.password})
+        return {
+            "access_token": result.session.access_token,
+            "refresh_token": result.session.refresh_token,
+        }
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid login credentials")
+
+
+@app.post("/auth/logout")
+def logout(user=Depends(get_current_user)):
+    supabase.auth.sign_out()
+    return {"message": "Logged out successfully"}
+
+# ── protected routes ───────────────────────────────────────────────────────────
+
+@app.get("/public/info")
+def public_info():
+    return {"message": "Welcome stranger! This info is public."}
+
+
+@app.get("/protected/profile")
+def profile(user=Depends(get_current_user)):
+    return {"id": user.id, "email": user.email, "created_at": user.created_at}
+
+
+@app.get("/protected/dashboard")
+def dashboard(user=Depends(get_current_user)):
+    return {"message": f"Welcome to your dashboard, {user.email}!"}
