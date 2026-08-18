@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://books.toscrape.com/catalogue/does-not-exist_9999/index.html",
+    "stage": "fetch",
+    "error": "HTTP 404",
+    "status_code": 404,
+    "timestamp": "2026-08-18T09:01:37.181664Z"
+  }
+]
